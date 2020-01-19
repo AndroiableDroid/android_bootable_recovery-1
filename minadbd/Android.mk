@@ -22,10 +22,10 @@ minadbd_cflags := \
 # libminadbd (static library)
 # ===============================
 include $(CLEAR_VARS)
+    # ../fuse_sideload.cpp \
 
 LOCAL_SRC_FILES := \
     fuse_adb_provider.cpp \
-    ../fuse_sideload.cpp \
     minadbd.cpp \
     minadbd_services.cpp \
 
@@ -84,19 +84,19 @@ include $(BUILD_STATIC_LIBRARY)
 
 # minadbd_test (native test)
 # ===============================
-include $(CLEAR_VARS)
+# include $(CLEAR_VARS)
 
-LOCAL_MODULE := minadbd_test
-LOCAL_COMPATIBILITY_SUITE := device-tests
-LOCAL_SRC_FILES := fuse_adb_provider_test.cpp
-LOCAL_CFLAGS := $(minadbd_cflags)
-LOCAL_C_INCLUDES := $(LOCAL_PATH) system/core/adb
-LOCAL_STATIC_LIBRARIES := \
-    libBionicGtestMain \
-    libminadbd
-LOCAL_SHARED_LIBRARIES := \
-    liblog \
-    libbase \
-    libcutils
+# LOCAL_MODULE := minadbd_test
+# LOCAL_COMPATIBILITY_SUITE := device-tests
+# LOCAL_SRC_FILES := fuse_adb_provider_test.cpp
+# LOCAL_CFLAGS := $(minadbd_cflags)
+# LOCAL_C_INCLUDES := $(LOCAL_PATH) system/core/adb
+# LOCAL_STATIC_LIBRARIES := \
+#     libBionicGtestMain \
+#     libminadbd
+# LOCAL_SHARED_LIBRARIES := \
+#     liblog \
+#     libbase \
+#     libcutils
 
-include $(BUILD_NATIVE_TEST)
+# include $(BUILD_NATIVE_TEST)

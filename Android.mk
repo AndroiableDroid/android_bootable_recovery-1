@@ -122,7 +122,9 @@ LOCAL_C_INCLUDES += \
     system/core/adb \
     system/core/libsparse \
     external/zlib \
-    $(LOCAL_PATH)/bootloader_message_twrp/include
+    $(LOCAL_PATH)/bootloader_message_twrp/include \
+    $(LOCAL_PATH)/recovery_ui/include \
+    $(LOCAL_PATH)/otautil/include
 
 LOCAL_C_INCLUDES += bionic
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
@@ -136,7 +138,8 @@ LOCAL_STATIC_LIBRARIES :=
 LOCAL_SHARED_LIBRARIES :=
 
 LOCAL_STATIC_LIBRARIES += libguitwrp
-LOCAL_SHARED_LIBRARIES += libaosprecovery libz libc libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libtwadbbu libbootloader_message_twrp
+# LOCAL_SHARED_LIBRARIES += libaosprecovery libz libc libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libtwadbbu libbootloader_message_twrp
+LOCAL_SHARED_LIBRARIES += libz libc libcutils libstdc++ libtar libblkid libminuitwrp libminadbd libmtdutils libtwadbbu libbootloader_message_twrp
 LOCAL_SHARED_LIBRARIES += libcrecovery libtwadbbu libtwrpdigest libc++
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
@@ -148,6 +151,12 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 24; echo $$?),0)
     LOCAL_C_INCLUDES += $(LOCAL_PATH)/libmincrypt/includes
     LOCAL_CFLAGS += -DUSE_OLD_VERIFIER
 else
+    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -le 29; echo $$?),0)
+        LOCAL_C_INCLUDES += $(LOCAL_PATH)/verifier28/
+        LOCAL_CFLAGS += -DUSE_28_VERIFIER
+    else
+        LOCAL_C_INCLUDES += $(LOCAL_PATH)/install/include
+    endif
     LOCAL_SHARED_LIBRARIES += libcrypto
 endif
 
@@ -156,8 +165,13 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 24; echo $$?),0)
 endif
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26; echo $$?),0)
-   LOCAL_SHARED_LIBRARIES += libziparchive
-   LOCAL_C_INCLUDES += $(LOCAL_PATH)/otautil/include
+    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 29; echo $$?),0)
+        LOCAL_SHARED_LIBRARIES += libziparchive
+        LOCAL_C_INCLUDES += $(LOCAL_PATH)/otautil/include system/core/libziparchive/include
+    else
+        LOCAL_SHARED_LIBRARIES += libziparchive
+        LOCAL_C_INCLUDES += system/core/libziparchive/include
+    endif
 else
     LOCAL_SHARED_LIBRARIES += libminzip
     LOCAL_CFLAGS += -DUSE_MINZIP
@@ -706,11 +720,16 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 
 
-LOCAL_MODULE := libaosprecovery
+# LOCAL_MODULE := libaosprecovery
+LOCAL_MODULE := libinstall
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS := -std=gnu++0x
-LOCAL_SRC_FILES := adb_install.cpp legacy_property_service.cpp set_metadata.cpp tw_atomic.cpp installcommand.cpp zipwrap.cpp
-LOCAL_SHARED_LIBRARIES += libc liblog libcutils libmtdutils libfusesideload libselinux
+# LOCAL_SRC_FILES := adb_install.cpp legacy_property_service.cpp set_metadata.cpp tw_atomic.cpp installcommand.cpp zipwrap.cpp
+LOCAL_SRC_FILES := adb_install.cpp asn1_decoder.cpp fuse_sdcard_install.cpp install.cpp package.cpp verifier.cpp wipe_data.cpp
+# LOCAL_SHARED_LIBRARIES += libc liblog libcutils libmtdutils libfusesideload libselinux
+LOCAL_SHARED_LIBRARIES += libbase libbootloader_message libcrypto libext4_utils \
+    libfs_mgr libfusesideload libhidl-gen-utils libhidlbase libhidltransport \
+    liblog libselinux libtinyxml2 libutils libz libziparchive
 LOCAL_CFLAGS += -DRECOVERY_API_VERSION=$(RECOVERY_API_VERSION)
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
     LOCAL_SHARED_LIBRARIES += libstdc++ libstlport
@@ -725,24 +744,34 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 24; echo $$?),0)
     LOCAL_SRC_FILES += verifier24/verifier.cpp verifier24/asn1_decoder.cpp
     LOCAL_CFLAGS += -DUSE_OLD_VERIFIER
 else
-    LOCAL_SHARED_LIBRARIES += libcrypto libbase
-    LOCAL_SRC_FILES += verifier.cpp asn1_decoder.cpp
-    LOCAL_C_INCLUDES += $(LOCAL_PATH)/otautil/include
+    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -gt 28; echo $$?),0)
+        LOCAL_SHARED_LIBRARIES += libinstall
+        LOCAL_C_INCLUDES += $(commands_TWRP_local_path)/install/include
+        LOCAL_CFLAGS += -DRECOVERY_API_VERSION=$(RECOVERY_API_VERSION)
+    else
+        LOCAL_SHARED_LIBRARIES += libcrypto libbase
+        LOCAL_SRC_FILES += verifier28/verifier.cpp verifier28/asn1_decoder.cpp
+        LOCAL_C_INCLUDES += $(LOCAL_PATH)/otautil/include $(LOCAL_PATH)/verifier28 \
+            system/libvintf/include
+        LOCAL_CFLAGS += -DUSE_28_VERIFIER
+    endif
 endif
 
 ifeq ($(AB_OTA_UPDATER),true)
     LOCAL_CFLAGS += -DAB_OTA_UPDATER=1
 endif
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 26; echo $$?),0)
-    LOCAL_SRC_FILES += otautil/ZipUtil.cpp otautil/SysUtil.cpp otautil/DirUtil.cpp
-    LOCAL_SHARED_LIBRARIES += libziparchive libext4_utils libcrypto libcrypto_utils libfs_mgr
-    LOCAL_STATIC_LIBRARIES += libvintf_recovery liblogwrap libavb libvintf libtinyxml2 libz
-    LOCAL_C_INCLUDES += $(LOCAL_PATH)/otautil/include
-    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -gt 27; echo $$?),0)
-        # Android 9.0 needs c++17 for libvintf
-        LOCAL_CPPFLAGS += -std=c++17
-        # Android 9.0's libvintf also needs this library
-        LOCAL_STATIC_LIBRARIES += libhidl-gen-utils
+    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 29; echo $$?),0)
+        LOCAL_SRC_FILES += otautil/ZipUtil.cpp otautil/SysUtil.cpp otautil/DirUtil.cpp
+        LOCAL_SHARED_LIBRARIES += libziparchive libext4_utils libcrypto libcrypto_utils libfs_mgr
+        LOCAL_STATIC_LIBRARIES += libvintf_recovery liblogwrap libavb libvintf libtinyxml2 libz
+        LOCAL_C_INCLUDES += $(LOCAL_PATH)/otautil/include
+        ifeq ($(shell test $(PLATFORM_SDK_VERSION) -gt 27; echo $$?),0)
+            # Android 9.0 needs c++17 for libvintf
+            LOCAL_CPPFLAGS += -std=c++17
+            # Android 9.0's libvintf also needs this library
+            LOCAL_STATIC_LIBRARIES += libhidl-gen-utils
+        endif
     endif
 else
     LOCAL_CFLAGS += -DUSE_MINZIP
@@ -795,11 +824,11 @@ commands_recovery_local_path := $(LOCAL_PATH)
 #    $(LOCAL_PATH)/bootloader_message/Android.mk
 
     # $(commands_TWRP_local_path)/boot_control/Android.bp 
+    # $(commands_TWRP_local_path)/tests/Android.mk 
+    # $(commands_TWRP_local_path)/tools/Android.mk 
+    # $(commands_TWRP_local_path)/update_verifier/Android.mk
 include \
-    $(commands_TWRP_local_path)/tests/Android.mk \
-    $(commands_TWRP_local_path)/tools/Android.mk \
     $(commands_TWRP_local_path)/updater/Android.mk \
-    $(commands_TWRP_local_path)/update_verifier/Android.mk \
     $(commands_TWRP_local_path)/bootloader_message_twrp/Android.mk
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -le 25; echo $$?),0)

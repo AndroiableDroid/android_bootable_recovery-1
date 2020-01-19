@@ -54,7 +54,6 @@ LOCAL_SHARED_LIBRARIES += libz \
                           libdl \
                           libcutils \
                           libutils \
-                          libaosprecovery \
                           libselinux \
                           libbase
 

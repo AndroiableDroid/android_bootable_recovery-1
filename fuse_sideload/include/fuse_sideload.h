@@ -41,5 +41,3 @@ int run_old_fuse_sideload(const struct provider_vtab& vtab, void* cookie,
 #endif
 
 #endif
-
-#endif

@@ -24,7 +24,8 @@
 #include "minzip/SysUtil.h"
 #else
 #include <ziparchive/zip_archive.h>
-#include "otautil/SysUtil.h"
+// #include "otautil/SysUtil.h"
+#include "otautil/include/otautil/sysutil.h"
 #endif
 
 using namespace std;
