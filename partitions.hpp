@@ -162,6 +162,8 @@ public:
 	void Set_Backup_FileName(string fname);                                   // Set Backup_FileName for partition
 	string Get_Backup_Name();                                                 // Get Backup_Name for partition
 	bool Decrypt_FBE_DE();                                                    // If FBE is present, backup exclusions are set up and DE decrypt is attempted
+	string Get_Mount_Point();												  // Return Mount_Point or directory the current partition is mounted on
+	bool Get_Logical_Status();												  // Return whether partition is logical (on super partition)
 
 public:
 	string Current_File_System;                                               // Current file system
@@ -172,6 +174,7 @@ public:
 	string Crypto_Key_Location;                                               // Location of the crypto key used for decrypting encrypted data partitions
 	unsigned int MTP_Storage_ID;
 	string Adopted_GUID;
+	bool isSuper;															  // States whether partition should be loaded from the super partition
 
 protected:
 	bool Has_Data_Media;                                                      // Indicates presence of /data/media, may affect wiping and backup methods
@@ -281,8 +284,7 @@ private:
 	bool SlotSelect;                                                          // Partition has A/B slots
 	TWExclude backup_exclusions;                                              // Exclusions for file based backups
 	TWExclude wipe_exclusions;                                                // Exclusions for file based wipes (data/media devices only)
-	string Key_Directory;                                                      // Metadata key directory needed for mounting FBE encrypted data partitions using metadata encryption
-
+	string Key_Directory;                                                     // Metadata key directory needed for mounting FBE encrypted data partitions using metadata encryption
 	struct partition_fs_flags_struct {                                        // This struct is used to store mount flags and options for different file systems for the same partition
 		string File_System;
 		int Mount_Flags;
@@ -361,7 +363,7 @@ public:
 	void Translate_Partition_Display_Names();                                 // Updates display names based on translations
 	bool Decrypt_Adopted();                                                   // Attempt to identy and decrypt any adopted storage partitions
 	void Remove_Partition_By_Path(string Path);                               // Removes / erases a partition entry from the partition list
-
+	bool Is_Super_Partition(const char* fstab_line);						  // Checks if partition entry is a super partition
 	bool Flash_Image(string& path, string& filename);                         // Flashes an image to a selected partition from the partition list
 	bool Restore_Partition(struct PartitionSettings *part_settings);          // Restore the partitions based on type
 	TWAtomicInt stop_backup;

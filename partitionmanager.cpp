@@ -187,9 +187,11 @@ int TWPartitionManager::Process_Fstab(string Fstab_Filename, bool Display_Error)
 		LOGINFO("Reading %s\n", Fstab_Filename.c_str());
 
 	while (fgets(fstab_line, sizeof(fstab_line), fstabFile) != NULL) {
-		if (fstab_line[0] != '/')
-			continue;
+		bool isSuper = Is_Super_Partition(fstab_line);
 
+		if (!isSuper && fstab_line[0] != '/')
+			continue;
+		LOGINFO("processing %s\n", fstab_line);
 		if (strstr(fstab_line, "swap"))
 			continue; // Skip swap in recovery
 
@@ -3195,4 +3197,13 @@ bool TWPartitionManager::Repack_Images(const std::string& Target_Image, const st
 	}
 	TWFunc::removeDir(REPACK_NEW_DIR, false);
 	return true;
+}
+
+bool TWPartitionManager::Is_Super_Partition(const char* fstab_line) {
+	bool isSuper = false;
+	if (strncmp(fstab_line, "system", strlen("system")) == 0 || strncmp(fstab_line, "vendor", strlen("vendor")) == 0
+ 		|| strncmp(fstab_line, "data", strlen("data")) == 0) {
+		isSuper = true;
+	}
+	return isSuper;
 }

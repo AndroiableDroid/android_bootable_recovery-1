@@ -46,6 +46,7 @@ extern "C" {
 #include "openrecoveryscript.hpp"
 #include "variables.h"
 #include "twrpAdbBuFifo.hpp"
+#include "twrp_super.hpp"
 #ifdef TW_USE_NEW_MINADBD
 // #include "minadbd/minadbd.h"
 #else
@@ -299,23 +300,30 @@ int main(int argc, char **argv) {
 	TWPartition* ven = PartitionManager.Find_Partition_By_Path("/vendor");
 
 	if (sys) {
-		if ((DataManager::GetIntValue("tw_mount_system_ro") == 0 && sys->Check_Lifetime_Writes() == 0) || DataManager::GetIntValue("tw_mount_system_ro") == 2) {
-			if (DataManager::GetIntValue("tw_never_show_system_ro_page") == 0) {
-				DataManager::SetValue("tw_back", "main");
-				if (gui_startPage("system_readonly", 1, 1) != 0) {
-					LOGERR("Failed to start system_readonly GUI page.\n");
+		if (sys->isSuper) {
+			sleep(15);
+			twrp_super superPart;
+			// LOGINFO("attempting to mount %s", sys->Get_Mount_Point().c_str());
+			// superPart.MountPartition(sys);
+		} else {
+			if ((DataManager::GetIntValue("tw_mount_system_ro") == 0 && sys->Check_Lifetime_Writes() == 0) || DataManager::GetIntValue("tw_mount_system_ro") == 2) {
+				if (DataManager::GetIntValue("tw_never_show_system_ro_page") == 0) {
+					DataManager::SetValue("tw_back", "main");
+					if (gui_startPage("system_readonly", 1, 1) != 0) {
+						LOGERR("Failed to start system_readonly GUI page.\n");
+					}
+				} else if (DataManager::GetIntValue("tw_mount_system_ro") == 0) {
+					sys->Change_Mount_Read_Only(false);
+					if (ven)
+						ven->Change_Mount_Read_Only(false);
 				}
-			} else if (DataManager::GetIntValue("tw_mount_system_ro") == 0) {
+			} else if (DataManager::GetIntValue("tw_mount_system_ro") == 1) {
+				// Do nothing, user selected to leave system read only
+			} else {
 				sys->Change_Mount_Read_Only(false);
 				if (ven)
 					ven->Change_Mount_Read_Only(false);
 			}
-		} else if (DataManager::GetIntValue("tw_mount_system_ro") == 1) {
-			// Do nothing, user selected to leave system read only
-		} else {
-			sys->Change_Mount_Read_Only(false);
-			if (ven)
-				ven->Change_Mount_Read_Only(false);
 		}
 	}
 #endif

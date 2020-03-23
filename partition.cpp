@@ -158,6 +158,7 @@ enum TW_FSTAB_FLAGS {
 	TWFLAG_FORMATTABLE,
 	TWFLAG_RESIZE,
 	TWFLAG_KEYDIRECTORY,
+	TWFLAG_LOGICAL,
 };
 
 /* Flags without a trailing '=' are considered dual format flags and can be
@@ -202,6 +203,7 @@ const struct flag_list tw_flags[] = {
 	{ "formattable",            TWFLAG_FORMATTABLE },
 	{ "resize",                 TWFLAG_RESIZE },
 	{ "keydirectory=",          TWFLAG_KEYDIRECTORY },
+	{ "logical",				TWFLAG_LOGICAL },
 	{ 0,                        0 },
 };
 
@@ -266,6 +268,7 @@ TWPartition::TWPartition() {
 	Adopted_GUID = "";
 	SlotSelect = false;
 	Key_Directory = "";
+	isSuper = false;
 }
 
 TWPartition::~TWPartition(void) {
@@ -283,6 +286,7 @@ bool TWPartition::Process_Fstab_Line(const char *fstab_line, bool Display_Error,
 	std::map<string, Flags_Map>::iterator it;
 
 	strlcpy(full_line, fstab_line, sizeof(full_line));
+
 	for (index = 0; index < line_len; index++) {
 		if (full_line[index] == 34)
 			skip = !skip;
@@ -298,6 +302,15 @@ bool TWPartition::Process_Fstab_Line(const char *fstab_line, bool Display_Error,
 		fs_index = 2;
 	}
 
+	isSuper = PartitionManager.Is_Super_Partition(fstab_line);
+	if (isSuper) {
+		LOGINFO("setting super status\n");
+		block_device_index = 0;
+		fstab_version = 2;
+		mount_point_index = 1;
+		fs_index = 2;
+	}
+
 	index = 0;
 	while (index < line_len) {
 		while (index < line_len && full_line[index] == '\0')
@@ -307,7 +320,7 @@ bool TWPartition::Process_Fstab_Line(const char *fstab_line, bool Display_Error,
 		ptr = full_line + index;
 		if (item_index == mount_point_index) {
 			Mount_Point = ptr;
-			if (fstab_version == 2) {
+			if (fstab_version == 2 && isSuper == false) {
 				additional_entry = PartitionManager.Find_Partition_By_Path(Mount_Point);
 				if (additional_entry) {
 					LOGINFO("Found an additional entry for '%s'\n", Mount_Point.c_str());
@@ -339,11 +352,13 @@ bool TWPartition::Process_Fstab_Line(const char *fstab_line, bool Display_Error,
 				if (*ptr != '/')
 					LOGERR("Until we get better BML support, you will have to find and provide the full block device path to the BML devices e.g. /dev/block/bml9 instead of the partition name\n");
 			} else if (*ptr != '/') {
-				if (Display_Error)
-					LOGERR("Invalid block device '%s' in fstab line '%s'", ptr, fstab_line);
-				else
-					LOGINFO("Invalid block device '%s' in fstab line '%s'", ptr, fstab_line);
-				return false;
+				if (!isSuper) {
+					if (Display_Error)
+						LOGERR("Invalid block device '%s' in fstab line '%s'", ptr, fstab_line);
+					else
+						LOGINFO("Invalid block device '%s' in fstab line '%s'", ptr, fstab_line);
+					return false;
+				}
 			} else {
 				Primary_Block_Device = ptr;
 				Find_Real_Block_Device(Primary_Block_Device, Display_Error);
@@ -3327,4 +3342,8 @@ void TWPartition::Set_Backup_FileName(string fname) {
 
 string TWPartition::Get_Backup_Name() {
 	return Backup_Name;
+}
+
+string TWPartition::Get_Mount_Point() {
+	return Mount_Point;
 }
