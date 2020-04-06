@@ -106,6 +106,12 @@ ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
     RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libcap.so
     RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libminijail.so
     RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libunwindstack.so
+    #RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libcgrouprc.so
+    #RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libjsoncpp.so
+    #RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libfec.so
+    #RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libsquashfs_utils.so
+    #RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libmdnssd.so
+    #RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libbinderthreadstate.so
     RELINK_SOURCE_FILES += $(TARGET_ROOT_OUT)/../system/lib64/libinit.so
     RELINK_SOURCE_FILES += $(TARGET_ROOT_OUT)/../system/lib64/libdl_android.so
     RELINK_SOURCE_FILES += $(TARGET_ROOT_OUT)/../system/lib64/libprotobuf-cpp-lite.so
@@ -215,7 +221,11 @@ endif
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 28; echo $$?),0)
 ifneq ($(TW_EXCLUDE_MTP), true)
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libtwrpmtp-ffs.so
-    RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libasyncio.so
+    ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
+        #RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libasyncio.so
+    else
+        RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libasyncio.so
+    endif
 endif
 else
 ifneq ($(TW_EXCLUDE_MTP), true)
