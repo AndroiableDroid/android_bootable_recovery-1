@@ -331,7 +331,11 @@ ifeq ($(TW_INCLUDE_CRYPTO), true)
     ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 24; echo $$?),0)
         TW_INCLUDE_CRYPTO_FBE := true
         LOCAL_CFLAGS += -DTW_INCLUDE_FBE
-        LOCAL_SHARED_LIBRARIES += libe4crypt
+        ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
+            LOCAL_SHARED_LIBRARIES += libtwrpfscrypt
+        else
+            LOCAL_SHARED_LIBRARIES += libe4crypt
+        endif
         ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 28; echo $$?),0)
             LOCAL_CFLAGS += -DTW_INCLUDE_FBE_METADATA_DECRYPT
         endif
@@ -850,7 +854,11 @@ ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_TWRP_local_path)/crypto/fde/Android.mk
     include $(commands_TWRP_local_path)/crypto/scrypt/Android.mk
     ifeq ($(TW_INCLUDE_CRYPTO_FBE), true)
-        include $(commands_TWRP_local_path)/crypto/ext4crypt/Android.mk
+        ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
+            include $(commands_TWRP_local_path)/crypto/fscrypt/Android.mk
+        else
+            include $(commands_TWRP_local_path)/crypto/ext4crypt/Android.mk
+        endif
     endif
     ifneq ($(TW_CRYPTO_USE_SYSTEM_VOLD),)
     ifneq ($(TW_CRYPTO_USE_SYSTEM_VOLD),false)

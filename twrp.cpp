@@ -100,6 +100,7 @@ int main(int argc, char **argv) {
 #ifdef RECOVERY_SDCARD_ON_DATA
 	datamedia = true;
 #endif
+	// sleep(15);
 
 	char crash_prop_val[PROPERTY_VALUE_MAX];
 	int crash_counter;
@@ -213,13 +214,16 @@ int main(int argc, char **argv) {
 		sys->Change_Mount_Read_Only(true);
 		twrpApex apex;
 		apex.loadApexImages();
-
+		property_set("twrp.apex.loaded", "true");
 		if (ven && ven->Get_Super_Status()) {
 			PartitionManager.Prepare_Partition(ven);
 			ven->Change_Mount_Read_Only(true);
 		}
 	}
 
+#ifdef TW_INCLUDE_CRYPTO
+	PartitionManager.Decrypt_Data();
+#endif
 	// Load up all the resources
 	gui_loadResources();
 

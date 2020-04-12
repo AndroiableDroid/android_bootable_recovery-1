@@ -718,7 +718,7 @@ void TWPartition::Setup_Data_Partition(bool Display_Error) {
 }
 
 bool TWPartition::Decrypt_FBE_DE() {
-if (TWFunc::Path_Exists("/data/unencrypted/key/version")) {
+	if (TWFunc::Path_Exists("/data/unencrypted/key/version")) {
 		LOGINFO("File Based Encryption is present\n");
 #ifdef TW_INCLUDE_FBE
 		ExcludeAll(Mount_Point + "/convert_fbe");
@@ -741,8 +741,10 @@ if (TWFunc::Path_Exists("/data/unencrypted/key/version")) {
 		ExcludeAll(Mount_Point + "/drm/kek.dat");
 		ExcludeAll(Mount_Point + "/system_de/0/spblob"); // contains data needed to decrypt pixel 2
 		int retry_count = 3;
+		LOGINFO("attempting Decrypt_DE\n");
 		while (!Decrypt_DE() && --retry_count)
 			usleep(2000);
+		LOGINFO("Decrypt_FBE_DE::retry_count:%d\n", retry_count);
 		if (retry_count > 0) {
 			property_set("ro.crypto.state", "encrypted");
 			Is_Encrypted = true;
@@ -1561,11 +1563,11 @@ bool TWPartition::Mount(bool Display_Error) {
 		TWFunc::Exec_Cmd(Command);
 	}
 
-	if (Mount_Point == "/system_root") {
-		unlink("/system");
-		mkdir("/system", 0755);
-		mount("/system_root/system", "/system", "auto", MS_BIND, NULL);
-	}
+	// if (Mount_Point == "/system_root") {
+	// 	unlink("/system");
+	// 	mkdir("/system", 0755);
+	// 	mount("/system_root/system", "/system", "auto", MS_BIND, NULL);
+	// }
 
 	return true;
 }
