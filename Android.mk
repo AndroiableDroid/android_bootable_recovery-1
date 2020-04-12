@@ -84,6 +84,7 @@ LOCAL_SRC_FILES := \
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
     LOCAL_STATIC_LIBRARIES += libavb
     LOCAL_SHARED_LIBRARIES += libfs_mgr libinit
+    LOCAL_CFLAGS += -DUSE_FSCRYPT
     LOCAL_C_INCLUDES += \
         system/core/fs_mgr/libfs_avb/include/ \
         system/core/fs_mgr/include_fstab/ \
@@ -331,7 +332,11 @@ ifeq ($(TW_INCLUDE_CRYPTO), true)
     ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 24; echo $$?),0)
         TW_INCLUDE_CRYPTO_FBE := true
         LOCAL_CFLAGS += -DTW_INCLUDE_FBE
-        LOCAL_SHARED_LIBRARIES += libe4crypt
+        ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
+            LOCAL_SHARED_LIBRARIES += libtwrpfscrypt
+        else
+            LOCAL_SHARED_LIBRARIES += libe4crypt
+        endif
         ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 28; echo $$?),0)
             LOCAL_CFLAGS += -DTW_INCLUDE_FBE_METADATA_DECRYPT
         endif
@@ -419,7 +424,7 @@ endif
 
 TWRP_REQUIRED_MODULES += \
     relink \
-    relink_init \
+    twrp_ramdisk \
     dump_image \
     erase_image \
     flash_image \
@@ -436,7 +441,15 @@ TWRP_REQUIRED_MODULES += \
     init.recovery.hlthchrg.rc \
     init.recovery.service.rc \
     init.recovery.ldconfig.rc \
-    awk
+    awk \
+    plat_service_contexts \
+    plat_hwservice_contexts \
+    vendor_hwservice_contexts \
+    vndservice_contexts \
+    hwservicemanager \
+    servicemanager \
+    vndservicemanager \
+    vold_prepare_subdirs
 
 ifneq ($(TARGET_ARCH), arm64)
     ifneq ($(TARGET_ARCH), x86_64)
@@ -675,7 +688,7 @@ LOCAL_MODULE := librecovery
 LOCAL_STATIC_LIBRARIES := \
     libminui \
     libotautil \
-    libvintf_recovery \
+    libvintf \
     libcrypto_utils \
     libcrypto \
     libbase \
@@ -700,7 +713,7 @@ else
         install/set_metadata.cpp verifier28/verifier.cpp install/zipwrap.cpp install/ZipUtil.cpp
 endif
 LOCAL_SHARED_LIBRARIES += libbase libbootloader_message libcrypto libext4_utils \
-    libfs_mgr libfusesideload libhidl-gen-utils libhidlbase libhidltransport \
+    libfs_mgr libfusesideload libhidl-gen-utils libhidlbase \
     liblog libselinux libtinyxml2 libutils libz libziparchive libcutils
 LOCAL_CFLAGS += -DRECOVERY_API_VERSION=$(RECOVERY_API_VERSION)
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
@@ -850,7 +863,11 @@ ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_TWRP_local_path)/crypto/fde/Android.mk
     include $(commands_TWRP_local_path)/crypto/scrypt/Android.mk
     ifeq ($(TW_INCLUDE_CRYPTO_FBE), true)
-        include $(commands_TWRP_local_path)/crypto/ext4crypt/Android.mk
+        ifeq ($(shell test $(PLATFORM_SDK_VERSION) -ge 29; echo $$?),0)
+            include $(commands_TWRP_local_path)/crypto/fscrypt/Android.mk
+        else
+            include $(commands_TWRP_local_path)/crypto/ext4crypt/Android.mk
+        endif
     endif
     ifneq ($(TW_CRYPTO_USE_SYSTEM_VOLD),)
     ifneq ($(TW_CRYPTO_USE_SYSTEM_VOLD),false)

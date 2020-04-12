@@ -718,7 +718,7 @@ void TWPartition::Setup_Data_Partition(bool Display_Error) {
 }
 
 bool TWPartition::Decrypt_FBE_DE() {
-if (TWFunc::Path_Exists("/data/unencrypted/key/version")) {
+	if (TWFunc::Path_Exists("/data/unencrypted/key/version")) {
 		LOGINFO("File Based Encryption is present\n");
 #ifdef TW_INCLUDE_FBE
 		ExcludeAll(Mount_Point + "/convert_fbe");
@@ -1561,11 +1561,13 @@ bool TWPartition::Mount(bool Display_Error) {
 		TWFunc::Exec_Cmd(Command);
 	}
 
+#ifdef BOARD_BUILD_SYSTEM_ROOT_IMAGE
 	if (Mount_Point == "/system_root") {
 		unlink("/system");
 		mkdir("/system", 0755);
 		mount("/system_root/system", "/system", "auto", MS_BIND, NULL);
 	}
+#endif
 
 	return true;
 }
