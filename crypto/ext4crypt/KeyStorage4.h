@@ -19,9 +19,9 @@
 
 #include "Keymaster4.h"
 #include "KeyBuffer.h"
-#include <ext4_utils/ext4_crypt.h>
 
 #include <string>
+#include <cutils/multiuser.h>
 
 namespace android {
 namespace vold {
