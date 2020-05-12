@@ -1,5 +1,4 @@
 LOCAL_PATH := $(call my-dir)
-ifeq ($(TW_INCLUDE_CRYPTO), true)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := libcryptfsfde
@@ -120,5 +119,3 @@ endif
 
 LOCAL_WHOLE_STATIC_LIBRARIES += libscrypttwrp_static
 include $(BUILD_EXECUTABLE)
-
-endif

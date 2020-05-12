@@ -1,5 +1,4 @@
 LOCAL_PATH := $(call my-dir)
-ifeq ($(TW_INCLUDE_CRYPTO), true)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := libtwrpfscrypt
@@ -78,5 +77,3 @@ LOCAL_SHARED_LIBRARIES += libkeystore_aidl
 LOCAL_LDFLAGS += -Wl,-dynamic-linker,/sbin/linker64
 
 include $(BUILD_EXECUTABLE)
-
-endif
